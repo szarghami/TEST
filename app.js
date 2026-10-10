@@ -253,28 +253,66 @@ const app = {
         this.state.phone = phone;
         this.els.displayPhone.textContent = phone;
 
-        // Mock API Call
-        this.showToast('کد تایید ارسال شد (کد تستی: 123456)', 'success');
+        if (this.supabase) {
+            try {
+                const { error } = await this.supabase.auth.signInWithOtp({ phone });
+                if (error) throw error;
+                this.showToast('کد تایید ارسال شد', 'success');
+            } catch (err) {
+                console.error('Error sending OTP:', err);
+                this.showToast('خطا در ارسال کد تایید', 'error');
+                return;
+            }
+        } else {
+            // Mock API Call
+            this.showToast('کد تایید ارسال شد (کد تستی: 123456)', 'success');
+        }
+
         this.els.loginStep1.classList.remove('active');
         this.els.loginStep2.classList.add('active');
     },
 
     async verifyOtp() {
         const otp = this.els.otpInput.value;
-        if (otp === '123456') { // Mock validation
-            // In real app: await this.supabase.auth.signInWithOtp({ phone, otp })
-            this.state.user = { phone: this.state.phone, id: 'user_123', isPremium: false };
-            localStorage.setItem('autoyar_user', JSON.stringify(this.state.user));
-            this.showMainApp();
-            this.showToast('ورود موفقیت آمیز بود', 'success');
+        if (this.supabase) {
+            try {
+                const { data, error } = await this.supabase.auth.verifyOtp({
+                    phone: this.state.phone,
+                    token: otp,
+                    type: 'sms'
+                });
+
+                if (error) throw error;
+
+                this.state.user = {
+                    phone: this.state.phone,
+                    id: data.user.id,
+                    isPremium: false // Would be fetched from DB in a full app
+                };
+                localStorage.setItem('autoyar_user', JSON.stringify(this.state.user));
+                this.showMainApp();
+                this.showToast('ورود موفقیت آمیز بود', 'success');
+            } catch (err) {
+                console.error('Error verifying OTP:', err);
+                this.showToast('کد تایید اشتباه است', 'error');
+            }
         } else {
-            this.showToast('کد تایید اشتباه است', 'error');
+            if (otp === '123456') { // Mock validation
+                this.state.user = { phone: this.state.phone, id: 'user_123', isPremium: false };
+                localStorage.setItem('autoyar_user', JSON.stringify(this.state.user));
+                this.showMainApp();
+                this.showToast('ورود موفقیت آمیز بود', 'success');
+            } else {
+                this.showToast('کد تایید اشتباه است', 'error');
+            }
         }
     },
 
-    logout() {
+    async logout() {
         localStorage.removeItem('autoyar_user');
-        // if(this.supabase) await this.supabase.auth.signOut();
+        if(this.supabase) {
+            await this.supabase.auth.signOut();
+        }
         window.location.reload();
     },
 
