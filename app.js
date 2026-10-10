@@ -279,6 +279,8 @@ const app = {
     },
 
     showMainApp() {
+        const publicLanding = document.getElementById('public-landing');
+        if (publicLanding) publicLanding.style.display = 'none';
         this.els.authView.style.display = 'none';
         this.els.authView.classList.remove('active');
         this.els.mainLayout.style.display = 'block';
@@ -747,5 +749,8 @@ window.app = app;
 
 // Start app
 document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
+aded', () => {
     app.init();
 });
