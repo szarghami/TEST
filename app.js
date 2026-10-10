@@ -22,7 +22,7 @@ window.addEventListener('appinstalled', () => {
 const app = {
     // --- Configuration (To be filled by user from CHECKLIST.md) ---
     config: {
-        supabaseUrl: 'https://miotuyaypolahjzhkfpq.supabase.co',
+        supabaseUrl: 'https://miotuyaypolahjzhkfpq.supabase.co/rest/v1/',
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pb3R1eWF5cG9sYWhqemhrZnBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MTYyOTgsImV4cCI6MjEwNzE5MjI5OH0.YUnMHxiM0dbYuqeOSbsM66HqQrmXVW2PvFScGDZZ7mw',
         zarinpalMerchant: 'YOUR_ZARINPAL_MERCHANT_ID',
         openAiKey: 'YOUR_OPENAI_API_KEY' // Or specific AI backend endpoint
