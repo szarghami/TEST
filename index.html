@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دستیار تعمیرات خودرو</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="دستیار هوشمند تعمیرات و نگهداری خودرو شما">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+
+    <!-- External Libraries -->
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tailwind CSS (for rapid styling logic, converted to pure CSS concepts in style.css or used directly if permitted, but user asked for pure CSS, so I'll just use a reset + custom pure CSS) -->
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Icons (Phosphor Icons or FontAwesome, using FontAwesome for simplicity) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth View -->
+        <section id="auth-view" class="view active">
+            <div class="auth-container">
+                <div class="logo">
+                    <i class="fa-solid fa-car-wrench"></i>
+                    <h1>اتویار</h1>
+                    <p>دستیار هوشمند خودرو</p>
+                </div>
+
+                <div id="login-step-1" class="auth-step active">
+                    <h2>ورود / ثبت نام</h2>
+                    <p>شماره موبایل خود را وارد کنید</p>
+                    <input type="tel" id="phone-input" placeholder="09123456789" dir="ltr">
+                    <button id="send-otp-btn" class="btn primary">ارسال کد تایید</button>
+                </div>
+
+                <div id="login-step-2" class="auth-step">
+                    <h2>تایید شماره</h2>
+                    <p>کد ارسال شده به شماره <span id="display-phone"></span> را وارد کنید</p>
+                    <input type="number" id="otp-input" placeholder="123456" dir="ltr">
+                    <button id="verify-otp-btn" class="btn primary">ورود به برنامه</button>
+                    <button id="back-to-phone-btn" class="btn text">تغییر شماره</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main App Layout (Hidden until logged in) -->
+        <div id="main-layout" style="display: none;">
+
+            <!-- Header -->
+            <header class="app-header">
+                <div class="user-info">
+                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                    <span id="user-phone-display">کاربر</span>
+                </div>
+                <div class="header-actions">
+                    <button id="premium-btn" class="btn outline gold"><i class="fa-solid fa-crown"></i> ارتقا پرمیوم</button>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view">
+                <div class="section-header">
+                    <h2>داشبورد وضعیت خودرو</h2>
+                    <div class="current-km">
+                        <span>کیلومتر فعلی:</span>
+                        <strong id="dashboard-km">0</strong>
+                        <button id="update-km-btn" class="btn icon-only"><i class="fa-solid fa-pen"></i></button>
+                    </div>
+                </div>
+
+                <div class="health-overview">
+                    <div class="chart-container">
+                        <canvas id="healthChart"></canvas>
+                    </div>
+                    <div class="status-summary">
+                        <h3>وضعیت کلی: <span class="status-good">خوب</span></h3>
+                        <p>۲ قطعه نیاز به بررسی دارند</p>
+                    </div>
+                </div>
+
+                <div class="parts-grid">
+                    <!-- Parts will be dynamically injected here -->
+                    <div class="part-card warning">
+                        <div class="part-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <div class="part-details">
+                            <h4>لنت ترمز جلو</h4>
+                            <div class="progress-bar"><div class="progress" style="width: 30%;"></div></div>
+                            <span class="remaining">۳۰٪ باقیمانده</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History View -->
+            <section id="history-view" class="view">
+                <div class="section-header">
+                    <h2>تاریخچه و علائم</h2>
+                    <button id="new-record-btn" class="btn primary"><i class="fa-solid fa-plus"></i> ثبت جدید</button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-target="repairs-list">تعمیرات و سرویس‌ها</button>
+                    <button class="tab" data-target="symptoms-list">علائم و خرابی‌ها</button>
+                </div>
+
+                <div id="repairs-list" class="tab-content active">
+                    <!-- Repair history items -->
+                </div>
+
+                <div id="symptoms-list" class="tab-content">
+                    <!-- Symptoms history items -->
+                </div>
+            </section>
+
+            <!-- DIY View -->
+            <section id="diy-view" class="view">
+                <div class="section-header">
+                    <h2>تعمیرات شخصی (DIY)</h2>
+                </div>
+
+                <div class="diy-cards">
+                    <div class="card diy-note">
+                        <h3><i class="fa-solid fa-book"></i> یادداشت‌های من</h3>
+                        <p>ثبت روش‌ها و قلق‌های نصب قطعات...</p>
+                        <button class="btn secondary small">مشاهده</button>
+                    </div>
+                    <div class="card tools-list">
+                        <h3><i class="fa-solid fa-toolbox"></i> جعبه ابزار من</h3>
+                        <p>لیست ابزارهای موجود و مورد نیاز...</p>
+                        <button class="btn secondary small">مشاهده</button>
+                    </div>
+                </div>
+
+                <div class="tutorials">
+                    <h3>ویدیوهای آموزشی اختصاصی</h3>
+                    <div class="video-grid" id="video-tutorials">
+                        <!-- Videos from API/DB -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI & OBD2 View -->
+            <section id="ai-view" class="view">
+                <div class="section-header">
+                    <h2>دیاگ هوشمند و هوش مصنوعی</h2>
+                </div>
+
+                <div class="obd-section">
+                    <div class="obd-status">
+                        <i class="fa-brands fa-bluetooth-b"></i>
+                        <span id="obd-connection-status">متصل نیست</span>
+                    </div>
+                    <button id="connect-obd-btn" class="btn primary">اتصال به دستگاه دیاگ (OBD2)</button>
+                    <div id="obd-data" class="hidden">
+                        <!-- OBD Data -->
+                    </div>
+                </div>
+
+                <div class="ai-chat-section">
+                    <div class="chat-messages" id="ai-messages">
+                        <div class="message ai">
+                            سلام! من دستیار هوشمند شما هستم. علائم خودرو یا کد خطای دیاگ را به من بگویید تا راهنماییتان کنم.
+                        </div>
+                    </div>
+                    <div class="chat-input">
+                        <input type="text" id="ai-input" placeholder="مثال: ماشین موقع ترمز گرفتن صدا میده...">
+                        <button id="ai-send-btn" class="btn icon-only primary"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view">
+                <div class="section-header">
+                    <h2>تنظیمات و امکانات</h2>
+                </div>
+
+                <div class="settings-group">
+                    <h3>نوتیفیکیشن‌ها</h3>
+                    <div class="setting-item">
+                        <label>یادآوری کیلومتر</label>
+                        <select id="km-reminder-freq">
+                            <option value="daily">روزانه</option>
+                            <option value="weekly">هفتگی</option>
+                            <option value="monthly">ماهانه</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>امکانات تجاری</h3>
+                    <button id="share-history-btn" class="btn secondary full-width mb-2"><i class="fa-solid fa-share-nodes"></i> تولید لینک تاریخچه برای مکانیک</button>
+                    <button class="btn secondary full-width affiliate-btn"><i class="fa-solid fa-store"></i> فروشگاه قطعات (همکاری در فروش)</button>
+                </div>
+
+                <div class="settings-group">
+                    <button id="logout-btn" class="btn danger full-width">خروج از حساب</button>
+                </div>
+            </section>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a href="#" class="nav-item active" data-view="dashboard-view">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>داشبورد</span>
+                </a>
+                <a href="#" class="nav-item" data-view="history-view">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>تاریخچه</span>
+                </a>
+                <a href="#" class="nav-item" data-view="diy-view">
+                    <i class="fa-solid fa-wrench"></i>
+                    <span>شخصی</span>
+                </a>
+                <a href="#" class="nav-item" data-view="ai-view">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>هوش</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings-view">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>تنظیمات</span>
+                </a>
+            </nav>
+
+        </div>
+
+        <!-- Modals -->
+        <!-- Payment Modal -->
+        <div id="payment-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>خرید اشتراک پرمیوم</h2>
+                <p>با خرید اشتراک پرمیوم به امکانات هوش مصنوعی، ثبت نامحدود و آموزش‌های تخصصی دسترسی پیدا کنید.</p>
+                <div class="payment-options">
+                    <button class="btn primary full-width mb-2" onclick="app.processPayment('zarinpal')">پرداخت با زرین‌پال</button>
+                    <button class="btn secondary full-width" onclick="app.processPayment('snapppay')">پرداخت اقساطی اسنپ‌پی</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Record Modal -->
+        <div id="add-record-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>ثبت رکورد جدید</h2>
+                <form id="record-form">
+                    <div class="form-group">
+                        <label>نوع ثبت</label>
+                        <select id="record-type" required>
+                            <option value="service">سرویس/تعویض قطعه</option>
+                            <option value="symptom">علائم/خرابی</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>عنوان</label>
+                        <input type="text" id="record-title" required>
+                    </div>
+                    <div class="form-group service-fields">
+                        <label>کیلومتر تعویض</label>
+                        <input type="number" id="record-km" dir="ltr">
+                    </div>
+                    <div class="form-group service-fields">
+                        <label>کیلومتر بعدی (انقضا)</label>
+                        <input type="number" id="record-next-km" dir="ltr">
+                    </div>
+                    <div class="form-group service-fields">
+                        <label>هزینه (تومان)</label>
+                        <input type="number" id="record-cost" dir="ltr">
+                    </div>
+                    <div class="form-group">
+                        <label>توضیحات</label>
+                        <textarea id="record-desc" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn primary full-width">ذخیره</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div id="toast" class="toast"></div>
+
+    </div>
+
+    <!-- App Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
