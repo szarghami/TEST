@@ -751,6 +751,3 @@ window.app = app;
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
-aded', () => {
-    app.init();
-});
