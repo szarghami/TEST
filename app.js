@@ -6,8 +6,8 @@
 const app = {
     // --- Configuration (To be filled by user from CHECKLIST.md) ---
     config: {
-        supabaseUrl: 'https://miotuyaypolahjzhkfpq.supabase.co',
-        supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pb3R1eWF5cG9sYWhqemhrZnBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MTYyOTgsImV4cCI6MjEwNzE5MjI5OH0.YUnMHxiM0dbYuqeOSbsM66HqQrmXVW2PvFScGDZZ7mw',
+        supabaseUrl: 'YOUR_SUPABASE_URL',
+        supabaseKey: 'YOUR_SUPABASE_ANON_KEY',
         zarinpalMerchant: 'YOUR_ZARINPAL_MERCHANT_ID',
         openAiKey: 'YOUR_OPENAI_API_KEY' // Or specific AI backend endpoint
     },
@@ -18,7 +18,8 @@ const app = {
         phone: '',
         currentKm: 0,
         records: [],
-        obdDevice: null
+        obdDevice: null,
+        deferredPrompt: null
     },
 
     // --- DOM Elements ---
@@ -78,7 +79,9 @@ const app = {
             aiSendBtn: document.getElementById('ai-send-btn'),
             aiMessages: document.getElementById('ai-messages'),
 
-            toast: document.getElementById('toast')
+            toast: document.getElementById('toast'),
+            installBtn: document.getElementById('install-btn'),
+            installGroup: document.getElementById('install-group')
         };
     },
 
@@ -140,6 +143,36 @@ const app = {
         });
 
         // Dashboard KM update (Mock)
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.state.deferredPrompt = e;
+            if(this.els.installGroup) this.els.installGroup.style.display = 'block';
+        });
+
+        if(this.els.installBtn) {
+            this.els.installBtn.addEventListener('click', async () => {
+                if (this.state.deferredPrompt) {
+                    this.state.deferredPrompt.prompt();
+                    const { outcome } = await this.state.deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        this.els.installGroup.style.display = 'none';
+                    }
+                    this.state.deferredPrompt = null;
+                }
+            });
+        }
+
+        // Connectivity changes
+        window.addEventListener('online', () => {
+            this.showToast('اینترنت متصل شد. در حال همگام‌سازی...', 'success');
+            this.syncOfflineData();
+        });
+        window.addEventListener('offline', () => {
+            this.showToast('ارتباط با اینترنت قطع شد. برنامه در حالت آفلاین کار می‌کند.', 'warning');
+        });
+
         this.els.updateKmBtn.addEventListener('click', () => {
             const newKm = prompt('کیلومتر فعلی خودرو را وارد کنید:', this.state.currentKm);
             if (newKm && !isNaN(newKm)) {
@@ -150,17 +183,21 @@ const app = {
 
     // --- Core Methods ---
 
+
     initSupabase() {
-        if(this.config.supabaseUrl === 'YOUR_SUPABASE_URL') {
-            console.warn("Supabase not configured yet. Running in local/mock mode.");
+        if(this.config.supabaseUrl === 'YOUR_SUPABASE_URL' || !this.config.supabaseUrl) {
+            console.warn("Supabase not configured. Running in Local-Only mode.");
+            this.supabase = null;
             return;
         }
         try {
             this.supabase = window.supabase.createClient(this.config.supabaseUrl, this.config.supabaseKey);
         } catch(e) {
             console.error("Supabase init error:", e);
+            this.supabase = null;
         }
     },
+
 
     checkAuth() {
         // In a real app, check Supabase session here
@@ -302,15 +339,17 @@ const app = {
     },
 
     // --- History & Records ---
-    saveRecord(e) {
+
+    async saveRecord(e) {
         e.preventDefault();
         const type = this.els.recordType.value;
         const record = {
-            id: Date.now(),
+            id: Date.now(), // Local temporary ID
             type: type,
             title: document.getElementById('record-title').value,
             date: new Date().toLocaleDateString('fa-IR'),
-            desc: document.getElementById('record-desc').value
+            desc: document.getElementById('record-desc').value,
+            synced: false // Flag to track offline records
         };
 
         if (type === 'service') {
@@ -319,23 +358,103 @@ const app = {
             record.cost = document.getElementById('record-cost').value;
         }
 
-        this.state.records.push(record);
-        // In real app: await this.supabase.from('records').insert([record])
+        // 1. Add to local state and save locally
+        this.state.records.unshift(record); // Add to top
+        localStorage.setItem('autoyar_records', JSON.stringify(this.state.records));
 
         this.renderRecords();
         this.closeModal(this.els.addRecordModal);
         this.els.recordForm.reset();
-        this.showToast('رکورد با موفقیت ثبت شد', 'success');
+
+        // 2. Try to sync with Supabase
+        await this.syncRecordToCloud(record);
     },
 
-    loadHistory() {
-        // Mock data
-        this.state.records = [
-            { id: 1, type: 'service', title: 'تعویض روغن موتور', date: '۱۴۰۲/۰۸/۱۵', km: '60000', cost: '1200000' },
-            { id: 2, type: 'symptom', title: 'صدای جیر جیر هنگام ترمز', date: '۱۴۰۲/۰۹/۰۱', desc: 'از چرخ جلو سمت راست' }
-        ];
-        this.renderRecords();
+    async syncRecordToCloud(record) {
+        if (!navigator.onLine || !this.supabase || !this.state.user) {
+            this.showToast('اینترنت قطع است. اطلاعات ذخیره شد و بعداً همگام می‌شود.', 'info');
+            return;
+        }
+
+        try {
+            const dbRecord = {
+                user_phone: this.state.user.phone,
+                type: record.type,
+                title: record.title,
+                km: record.km ? parseInt(record.km) : null,
+                next_km: record.nextKm ? parseInt(record.nextKm) : null,
+                cost: record.cost ? parseInt(record.cost) : null,
+                description: record.desc
+            };
+
+            const { data, error } = await this.supabase.from('records').insert([dbRecord]).select();
+            if (error) throw error;
+
+            // Mark as synced locally (in a real complex app you'd replace the local ID with the DB ID)
+            record.synced = true;
+            localStorage.setItem('autoyar_records', JSON.stringify(this.state.records));
+            this.showToast('رکورد با موفقیت ذخیره و همگام‌سازی شد', 'success');
+        } catch (err) {
+            console.error("Sync error:", err);
+            this.showToast('خطا در همگام‌سازی با سرور. اطلاعات به صورت محلی ذخیره شد.', 'warning');
+        }
     },
+
+    async syncOfflineData() {
+        if (!this.supabase || !this.state.user) return;
+        const unsynced = this.state.records.filter(r => r.synced === false);
+        if (unsynced.length === 0) return;
+
+        for (const record of unsynced) {
+            await this.syncRecordToCloud(record);
+        }
+    },
+
+
+
+    async loadHistory() {
+        // 1. Load from local storage first (for instant display & offline support)
+        const localRecords = localStorage.getItem('autoyar_records');
+        if (localRecords) {
+            this.state.records = JSON.parse(localRecords);
+            this.renderRecords();
+        } else {
+            this.state.records = []; // start empty if nothing local
+        }
+
+        // 2. If online and supabase is configured, fetch from cloud
+        if (navigator.onLine && this.supabase && this.state.user) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('records')
+                    .select('*')
+                    .eq('user_phone', this.state.user.phone)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    // Map DB records to state format
+                    this.state.records = data.map(r => ({
+                        id: r.id,
+                        type: r.type,
+                        title: r.title,
+                        date: new Date(r.created_at).toLocaleDateString('fa-IR'),
+                        km: r.km,
+                        nextKm: r.next_km,
+                        cost: r.cost,
+                        desc: r.description
+                    }));
+                    // Save cloud data to local storage
+                    localStorage.setItem('autoyar_records', JSON.stringify(this.state.records));
+                    this.renderRecords();
+                }
+            } catch (err) {
+                console.error("Failed to load from Supabase:", err);
+            }
+        }
+    },
+
 
     renderRecords() {
         const repairsList = document.getElementById('repairs-list');
