@@ -3,6 +3,22 @@
  * Main Application Logic
  */
 
+// Global early capture of beforeinstallprompt event
+let earlyDeferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    earlyDeferredInstallPrompt = e;
+    if (window.app && typeof window.app.onInstallPromptAvailable === 'function') {
+        window.app.onInstallPromptAvailable(e);
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    if (window.app && typeof window.app.onAppInstalled === 'function') {
+        window.app.onAppInstalled();
+    }
+});
+
 const app = {
     // --- Configuration (To be filled by user from CHECKLIST.md) ---
     config: {
@@ -19,7 +35,8 @@ const app = {
         currentKm: 0,
         records: [],
         obdDevice: null,
-        deferredPrompt: null
+        deferredPrompt: null,
+        isStandalone: false
     },
 
     // --- DOM Elements ---
@@ -29,6 +46,7 @@ const app = {
     init() {
         this.cacheDOM();
         this.bindEvents();
+        this.initPwa();
         this.initSupabase();
         this.checkAuth();
         this.registerServiceWorker();
@@ -80,8 +98,18 @@ const app = {
             aiMessages: document.getElementById('ai-messages'),
 
             toast: document.getElementById('toast'),
+            pwaInstallBanner: document.getElementById('pwa-install-banner'),
+            bannerInstallBtn: document.getElementById('banner-install-btn'),
+            bannerCloseBtn: document.getElementById('banner-close-btn'),
+            authInstallBtn: document.getElementById('auth-install-btn'),
+            headerInstallBtn: document.getElementById('header-install-btn'),
             installBtn: document.getElementById('install-btn'),
-            installGroup: document.getElementById('install-group')
+            installGroup: document.getElementById('install-group'),
+            installGuideModal: document.getElementById('install-guide-modal'),
+            guideTriggerInstallBtn: document.getElementById('guide-trigger-install-btn'),
+            guideIos: document.getElementById('guide-ios'),
+            guideAndroid: document.getElementById('guide-android'),
+            guideDesktop: document.getElementById('guide-desktop')
         };
     },
 
@@ -144,23 +172,27 @@ const app = {
 
         // Dashboard KM update (Mock)
 
-        // PWA Install
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            this.state.deferredPrompt = e;
-            if(this.els.installGroup) this.els.installGroup.style.display = 'block';
+        // PWA Install Triggers
+        const installTriggerElements = [
+            this.els.bannerInstallBtn,
+            this.els.authInstallBtn,
+            this.els.headerInstallBtn,
+            this.els.installBtn,
+            this.els.guideTriggerInstallBtn
+        ];
+
+        installTriggerElements.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.triggerInstall();
+                });
+            }
         });
 
-        if(this.els.installBtn) {
-            this.els.installBtn.addEventListener('click', async () => {
-                if (this.state.deferredPrompt) {
-                    this.state.deferredPrompt.prompt();
-                    const { outcome } = await this.state.deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        this.els.installGroup.style.display = 'none';
-                    }
-                    this.state.deferredPrompt = null;
-                }
+        if (this.els.bannerCloseBtn) {
+            this.els.bannerCloseBtn.addEventListener('click', () => {
+                this.dismissBanner();
             });
         }
 
@@ -583,19 +615,135 @@ const app = {
         }, 2000);
     },
 
+    // --- PWA Installation & Service Worker ---
+    initPwa() {
+        // Check if currently running in standalone (already installed) mode
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                             window.navigator.standalone === true ||
+                             document.referrer.includes('android-app://');
+        this.state.isStandalone = isStandalone;
+
+        if (isStandalone) {
+            this.dismissInstallBanners();
+            if (this.els.installGroup) {
+                this.els.installGroup.innerHTML = `
+                    <h3>اپلیکیشن اتویار نصب شده است</h3>
+                    <p style="font-size: 0.9rem; color: var(--success);"><i class="fa-solid fa-circle-check"></i> شما در حال استفاده از نسخه نصب‌شده اتویار هستید.</p>
+                `;
+            }
+            return;
+        }
+
+        // If prompt was captured early
+        if (earlyDeferredInstallPrompt) {
+            this.state.deferredPrompt = earlyDeferredInstallPrompt;
+        }
+
+        // Check if banner was dismissed recently (within 24 hours)
+        const dismissedTime = localStorage.getItem('autoyar_install_banner_dismissed');
+        if (dismissedTime && (Date.now() - parseInt(dismissedTime, 10)) < 24 * 3600 * 1000) {
+            if (this.els.pwaInstallBanner) this.els.pwaInstallBanner.style.display = 'none';
+        }
+    },
+
+    onInstallPromptAvailable(e) {
+        this.state.deferredPrompt = e;
+        if (!this.state.isStandalone) {
+            if (this.els.pwaInstallBanner && !localStorage.getItem('autoyar_install_banner_dismissed')) {
+                this.els.pwaInstallBanner.style.display = 'flex';
+            }
+            if (this.els.installGroup) this.els.installGroup.style.display = 'block';
+            if (this.els.headerInstallBtn) this.els.headerInstallBtn.style.display = 'inline-flex';
+            if (this.els.authInstallBtn) this.els.authInstallBtn.style.display = 'inline-flex';
+        }
+    },
+
+    onAppInstalled() {
+        this.state.isStandalone = true;
+        this.state.deferredPrompt = null;
+        earlyDeferredInstallPrompt = null;
+        this.dismissInstallBanners();
+        this.showToast('اتویار با موفقیت نصب شد!', 'success');
+        if (this.els.installGuideModal) {
+            this.closeModal(this.els.installGuideModal);
+        }
+    },
+
+    async triggerInstall() {
+        if (this.state.isStandalone) {
+            this.showToast('اتویار هم‌اکنون به عنوان اپلیکیشن نصب است.', 'info');
+            return;
+        }
+
+        const promptEvent = this.state.deferredPrompt || earlyDeferredInstallPrompt;
+        if (promptEvent) {
+            try {
+                promptEvent.prompt();
+                const choiceResult = await promptEvent.userChoice;
+                if (choiceResult && choiceResult.outcome === 'accepted') {
+                    this.showToast('در حال نصب اتویار...', 'success');
+                    this.dismissInstallBanners();
+                }
+                this.state.deferredPrompt = null;
+                earlyDeferredInstallPrompt = null;
+            } catch (err) {
+                console.error('Install prompt error:', err);
+                this.showInstallGuide();
+            }
+        } else {
+            // No direct prompt (iOS Safari or browser menu)
+            this.showInstallGuide();
+        }
+    },
+
+    showInstallGuide() {
+        if (!this.els.installGuideModal) return;
+
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(navigator.userAgent);
+
+        if (this.els.guideIos) this.els.guideIos.style.display = isIos ? 'block' : 'none';
+        if (this.els.guideAndroid) this.els.guideAndroid.style.display = (isAndroid && !isIos) ? 'block' : 'none';
+        if (this.els.guideDesktop) this.els.guideDesktop.style.display = (!isIos && !isAndroid) ? 'block' : 'none';
+
+        this.openModal(this.els.installGuideModal);
+    },
+
+    dismissBanner() {
+        if (this.els.pwaInstallBanner) {
+            this.els.pwaInstallBanner.style.display = 'none';
+        }
+        localStorage.setItem('autoyar_install_banner_dismissed', Date.now().toString());
+    },
+
+    dismissInstallBanners() {
+        if (this.els.pwaInstallBanner) this.els.pwaInstallBanner.style.display = 'none';
+        if (this.els.headerInstallBtn) this.els.headerInstallBtn.style.display = 'none';
+        if (this.els.authInstallBtn) this.els.authInstallBtn.style.display = 'none';
+    },
+
     // --- PWA Service Worker ---
     registerServiceWorker() {
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(registration => {
-                    console.log('SW registered: ', registration.scope);
+            const register = () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' }).then(registration => {
+                    console.log('SW registered successfully with scope: ', registration.scope);
                 }).catch(err => {
-                    console.log('SW registration failed: ', err);
+                    console.error('SW registration failed: ', err);
                 });
-            });
+            };
+
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                register();
+            } else {
+                window.addEventListener('load', register);
+            }
         }
     }
 };
+
+// Expose app instance globally for event callbacks
+window.app = app;
 
 // Start app
 document.addEventListener('DOMContentLoaded', () => {

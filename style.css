@@ -78,6 +78,15 @@ body {
     border: 1px solid var(--gold);
 }
 
+.btn.outline.primary {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+}
+.btn.outline.primary:active {
+    background-color: rgba(37, 99, 235, 0.1);
+}
+
 .btn.icon-only {
     padding: 0.5rem;
     border-radius: 50%;
@@ -182,6 +191,11 @@ input:focus, select:focus, textarea:focus {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 .avatar {
     width: 40px;
@@ -521,3 +535,154 @@ input:focus, select:focus, textarea:focus {
     pointer-events: none;
 }
 .toast.show { opacity: 1; }
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+    color: #ffffff;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    margin: 0.75rem 1rem;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+    z-index: 100;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+.banner-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+.banner-text {
+    display: flex;
+    flex-direction: column;
+}
+.banner-text strong {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+.banner-text span {
+    font-size: 0.8rem;
+    opacity: 0.92;
+    margin-top: 2px;
+}
+.banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.banner-actions .btn {
+    white-space: nowrap;
+    background-color: #ffffff;
+    color: var(--primary-dark);
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.banner-actions .btn:hover {
+    background-color: #f8fafc;
+}
+.banner-close-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.banner-close-btn:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Auth Install Section */
+.auth-install-section {
+    margin-top: 2rem;
+    width: 100%;
+    max-width: 320px;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+}
+
+/* Install Guide Modal */
+.install-guide-content {
+    text-align: right;
+    max-width: 540px;
+    padding: 1.75rem;
+}
+.install-guide-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+.install-guide-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+.install-guide-header h2 {
+    font-size: 1.15rem;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+.install-guide-header p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+.guide-platform-section {
+    background: var(--bg-color);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
+}
+.guide-platform-section h4 {
+    color: var(--primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.guide-steps {
+    padding-right: 1.25rem;
+    font-size: 0.88rem;
+    line-height: 1.9;
+    color: var(--text-main);
+}
+.guide-steps strong {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 576px) {
+    .pwa-install-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    .banner-actions {
+        justify-content: space-between;
+    }
+    .banner-actions .btn {
+        flex: 1;
+    }
+}

@@ -3,28 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دستیار تعمیرات خودرو</title>
+    <title>دستیار هوشمند خودرو اتویار</title>
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#2563eb">
     <meta name="description" content="دستیار هوشمند تعمیرات و نگهداری خودرو شما">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="اتویار">
 
     <!-- External Libraries -->
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Tailwind CSS (for rapid styling logic, converted to pure CSS concepts in style.css or used directly if permitted, but user asked for pure CSS, so I'll just use a reset + custom pure CSS) -->
 
     <link rel="stylesheet" href="style.css">
 
-    <!-- Icons (Phosphor Icons or FontAwesome, using FontAwesome for simplicity) -->
+    <!-- Icons (FontAwesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app">
+        <!-- PWA Install Banner (Top Bar) -->
+        <div id="pwa-install-banner" class="pwa-install-banner">
+            <div class="banner-content">
+                <img src="icon-192x192.png" alt="اتویار" class="banner-icon">
+                <div class="banner-text">
+                    <strong>نصب اپلیکیشن اتویار</strong>
+                    <span>دسترسی سریع و اجرای آفلاین بدون فیلترشکن</span>
+                </div>
+            </div>
+            <div class="banner-actions">
+                <button id="banner-install-btn" class="btn primary small"><i class="fa-solid fa-download"></i> نصب برنامه</button>
+                <button id="banner-close-btn" class="banner-close-btn" aria-label="بستن">&times;</button>
+            </div>
+        </div>
+
         <!-- Auth View -->
         <section id="auth-view" class="view active">
             <div class="auth-container">
@@ -48,6 +69,11 @@
                     <button id="verify-otp-btn" class="btn primary">ورود به برنامه</button>
                     <button id="back-to-phone-btn" class="btn text">تغییر شماره</button>
                 </div>
+
+                <!-- Install Box in Auth -->
+                <div class="auth-install-section">
+                    <button id="auth-install-btn" class="btn outline primary full-width"><i class="fa-solid fa-mobile-screen-button"></i> نصب نسخه اپلیکیشن اتویار</button>
+                </div>
             </div>
         </section>
 
@@ -61,6 +87,7 @@
                     <span id="user-phone-display">کاربر</span>
                 </div>
                 <div class="header-actions">
+                    <button id="header-install-btn" class="btn outline primary small"><i class="fa-solid fa-download"></i> نصب اپ</button>
                     <button id="premium-btn" class="btn outline gold"><i class="fa-solid fa-crown"></i> ارتقا پرمیوم</button>
                 </div>
             </header>
@@ -196,10 +223,9 @@
                     </div>
                 </div>
 
-
-                <div class="settings-group" id="install-group" style="display: none;">
+                <div class="settings-group" id="install-group">
                     <h3>نصب اپلیکیشن</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">برای دسترسی سریع‌تر، اپلیکیشن را روی گوشی خود نصب کنید.</p>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">برای دسترسی سریع‌تر، آفلاین و بدون نیاز به مرورگر، اپلیکیشن را روی گوشی یا کامپیوتر خود نصب کنید.</p>
                     <button id="install-btn" class="btn primary full-width"><i class="fa-solid fa-download"></i> نصب اتویار</button>
                 </div>
 
@@ -289,6 +315,50 @@
                     </div>
                     <button type="submit" class="btn primary full-width">ذخیره</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Install Guide Modal -->
+        <div id="install-guide-modal" class="modal">
+            <div class="modal-content install-guide-content">
+                <span class="close-modal">&times;</span>
+                <div class="install-guide-header">
+                    <img src="icon-192x192.png" alt="اتویار" class="install-guide-logo">
+                    <div>
+                        <h2>نصب اپلیکیشن اتویار</h2>
+                        <p>راهنمای نصب سریع روی گوشی و کامپیوتر</p>
+                    </div>
+                </div>
+
+                <!-- Android and Chrome with trigger button -->
+                <div id="guide-android" class="guide-platform-section">
+                    <h4><i class="fa-brands fa-android"></i> راهنمای اندروید و گوگل کروم:</h4>
+                    <p style="font-size: 0.88rem; margin-bottom: 0.75rem;">روی دکمه زیر کلیک کنید تا پنجره نصب باز شود:</p>
+                    <button id="guide-trigger-install-btn" class="btn primary full-width mb-2"><i class="fa-solid fa-download"></i> تایید و نصب اپلیکیشن</button>
+                    <ol class="guide-steps" style="margin-top: 0.5rem;">
+                        <li>اگر پیام نصب خودکار نمایش داده نشد، روی منوی <strong>۳ نقطه (⋮)</strong> مرورگر کروم بزنید.</li>
+                        <li>گزینه <strong>«نصب برنامه» (Install app)</strong> یا <strong>«افزودن به صفحه اصلی» (Add to Home screen)</strong> را انتخاب کنید.</li>
+                    </ol>
+                </div>
+
+                <!-- iOS Safari -->
+                <div id="guide-ios" class="guide-platform-section">
+                    <h4><i class="fa-brands fa-apple"></i> راهنمای آیفون و آیپد (سافاری):</h4>
+                    <ol class="guide-steps">
+                        <li>در پایین صفحه مرورگر دکمه <strong>اشتراک‌گذاری (Share)</strong> یا علامت <i class="fa-solid fa-arrow-up-from-bracket"></i> را لمس کنید.</li>
+                        <li>در منوی باز شده به پایین اسکرول کنید و گزینه <strong>Add to Home Screen (افزودن به صفحه اصلی <i class="fa-regular fa-square-plus"></i>)</strong> را انتخاب کنید.</li>
+                        <li>در گوشه بالا دکمه <strong>Add (افزودن)</strong> را لمس کنید.</li>
+                    </ol>
+                </div>
+
+                <!-- Desktop / Other -->
+                <div id="guide-desktop" class="guide-platform-section">
+                    <h4><i class="fa-solid fa-desktop"></i> راهنمای کامپیوتر و لپ‌تاپ:</h4>
+                    <ol class="guide-steps">
+                        <li>در انتهای نوار آدرس مرورگر کروم یا اج، روی آیکون نصب <i class="fa-solid fa-circle-down"></i> کلیک کنید.</li>
+                        <li>یا از منوی سه نقطه مرورگر گزینه <strong>«نصب اتویار...» (Install)</strong> را انتخاب نمایید.</li>
+                    </ol>
+                </div>
             </div>
         </div>
 
