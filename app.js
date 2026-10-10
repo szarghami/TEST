@@ -751,3 +751,4 @@ window.app = app;
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 });
+if (typeof module !== 'undefined' && module.exports) { module.exports = app; }
