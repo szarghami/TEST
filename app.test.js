@@ -1,3 +1,4 @@
+window.appInitialized = true;
 const app = require('./app.js');
 
 describe('updateKm', () => {
