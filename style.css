@@ -39,6 +39,13 @@ body {
 .text { color: var(--text-main); }
 .text.primary { color: var(--primary); }
 
+/* جلوگیری از کپی شدن متن دکمه‌ها و حل مشکل زوم شدن در موبایل */
+.btn, .banner-close-btn, .tab, .nav-item, .close-modal {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;
