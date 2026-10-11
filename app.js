@@ -688,20 +688,29 @@ const app = {
     },
 
     // --- Payment Gateways (Mock Architecture) ---
-    processPayment(gateway) {
-        this.showToast(`در حال انتقال به درگاه ${gateway === 'zarinpal' ? 'زرین‌پال' : 'اسنپ‌پی'}...`, 'info');
+    async processPayment(gateway) {
+        const gateways = {
+            'zarinpal': 'زرین‌پال',
+            'snapppay': 'اسنپ‌پی'
+        };
+        const gatewayName = gateways[gateway] || gateway;
+
+        this.showToast(`در حال انتقال به درگاه ${gatewayName}...`, 'info');
 
         // Architecture:
         // 1. Call backend (Supabase Edge Function) to create payment intent
         // 2. Receive payment URL
         // 3. window.location.href = paymentUrl;
 
-        setTimeout(() => {
-            this.closeModal(this.els.paymentModal);
-            this.state.user.isPremium = true;
-            this.showToast('پرداخت تستی موفقیت آمیز بود. شما پرمیوم شدید!', 'success');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        this.closeModal(this.els.paymentModal);
+        this.state.user.isPremium = true;
+        this.showToast('پرداخت تستی موفقیت آمیز بود. شما پرمیوم شدید!', 'success');
+
+        if (this.els.premiumBtn) {
             this.els.premiumBtn.style.display = 'none';
-        }, 2000);
+        }
     },
 
     // --- PWA Installation & Service Worker ---
