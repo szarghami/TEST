@@ -630,6 +630,16 @@ const app = {
     },
 
     // --- AI Chatbot ---
+    async fetchAiResponse(text) {
+        // Mock Response (In real app, call OpenAI or backend API here)
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                const response = `بر اساس علامتی که گفتید ("${text}")، احتمالاً مشکل از لنت ترمز یا دیسک چرخ است. پیشنهاد می‌کنم در اسرع وقت ضخامت لنت‌ها بررسی شود.`;
+                resolve(response);
+            }, 1500);
+        });
+    },
+
     async sendAiMessage() {
         const text = this.els.aiInput.value.trim();
         if(!text) return;
@@ -641,13 +651,18 @@ const app = {
         // Mock AI thinking
         const thinkingId = this.appendChatMessage('در حال تحلیل...', 'ai');
 
-        setTimeout(() => {
-            document.getElementById(thinkingId).remove();
-
-            // Mock Response (In real app, call OpenAI or backend API here)
-            const response = `بر اساس علامتی که گفتید ("${text}")، احتمالاً مشکل از لنت ترمز یا دیسک چرخ است. پیشنهاد می‌کنم در اسرع وقت ضخامت لنت‌ها بررسی شود.`;
+        try {
+            const response = await this.fetchAiResponse(text);
             this.appendChatMessage(response, 'ai');
-        }, 1500);
+        } catch (error) {
+            console.error("AI Error:", error);
+            this.appendChatMessage('متاسفانه در ارتباط با سرور هوش مصنوعی خطایی رخ داد.', 'ai error');
+        } finally {
+            const thinkingEl = document.getElementById(thinkingId);
+            if (thinkingEl) {
+                thinkingEl.remove();
+            }
+        }
     },
 
     appendChatMessage(text, sender) {
