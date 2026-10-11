@@ -373,8 +373,42 @@ const app = {
         this.updatePartsHealth();
     },
 
-    loadDashboardData() {
-        this.updateKm(65000); // Mock data
+    async loadDashboardData() {
+        let latestKm = 0;
+
+        // 1. Try to get from local state/storage first
+        const recordsWithKm = this.state.records.filter(r => r.km != null);
+        if (recordsWithKm.length > 0) {
+            // Assuming records are sorted newest first
+            latestKm = Math.max(...recordsWithKm.map(r => parseInt(r.km)));
+        } else {
+            const localRecords = JSON.parse(localStorage.getItem('autoyar_records') || '[]');
+            const localWithKm = localRecords.filter(r => r.km != null);
+            if (localWithKm.length > 0) {
+                latestKm = Math.max(...localWithKm.map(r => parseInt(r.km)));
+            }
+        }
+
+        // 2. Fetch from backend if online
+        if (navigator.onLine && this.supabase && this.state.user) {
+            try {
+                const { data, error } = await this.supabase
+                    .from('records')
+                    .select('km')
+                    .eq('user_phone', this.state.user.phone)
+                    .not('km', 'is', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (!error && data && data.length > 0 && data[0].km) {
+                    latestKm = parseInt(data[0].km);
+                }
+            } catch (err) {
+                console.error("Failed to load dashboard data from Supabase:", err);
+            }
+        }
+
+        this.updateKm(latestKm);
     },
 
     initChart() {
