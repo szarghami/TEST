@@ -2,7 +2,6 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- تغییر در خط زیر: قفل کردن زوم صفحه برای رفتار مشابه اپلیکیشن‌های نیتیو -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>دستیار هوشمند خودرو اتویار</title>
 
@@ -115,7 +114,6 @@
                 </div>
 
                 <div class="parts-grid">
-                    <!-- Parts will be dynamically injected here -->
                     <div class="part-card warning">
                         <div class="part-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
                         <div class="part-details">
@@ -140,13 +138,8 @@
                     <button class="tab" data-target="symptoms-list">علائم و خرابی‌ها</button>
                 </div>
 
-                <div id="repairs-list" class="tab-content active">
-                    <!-- Repair history items -->
-                </div>
-
-                <div id="symptoms-list" class="tab-content">
-                    <!-- Symptoms history items -->
-                </div>
+                <div id="repairs-list" class="tab-content active"></div>
+                <div id="symptoms-list" class="tab-content"></div>
             </section>
 
             <!-- DIY View -->
@@ -170,9 +163,7 @@
 
                 <div class="tutorials">
                     <h3>ویدیوهای آموزشی اختصاصی</h3>
-                    <div class="video-grid" id="video-tutorials">
-                        <!-- Videos from API/DB -->
-                    </div>
+                    <div class="video-grid" id="video-tutorials"></div>
                 </div>
             </section>
 
@@ -188,9 +179,7 @@
                         <span id="obd-connection-status">متصل نیست</span>
                     </div>
                     <button id="connect-obd-btn" class="btn primary">اتصال به دستگاه دیاگ (OBD2)</button>
-                    <div id="obd-data" class="hidden">
-                        <!-- OBD Data -->
-                    </div>
+                    <div id="obd-data" class="hidden"></div>
                 </div>
 
                 <div class="ai-chat-section">
@@ -268,7 +257,6 @@
         </div>
 
         <!-- Modals -->
-        <!-- Payment Modal -->
         <div id="payment-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -281,7 +269,6 @@
             </div>
         </div>
 
-        <!-- Add Record Modal -->
         <div id="add-record-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -319,7 +306,6 @@
             </div>
         </div>
 
-        <!-- Install Guide Modal -->
         <div id="install-guide-modal" class="modal">
             <div class="modal-content install-guide-content">
                 <span class="close-modal">&times;</span>
@@ -331,7 +317,6 @@
                     </div>
                 </div>
 
-                <!-- Android and Chrome with trigger button -->
                 <div id="guide-android" class="guide-platform-section">
                     <h4><i class="fa-brands fa-android"></i> راهنمای اندروید و گوگل کروم:</h4>
                     <p style="font-size: 0.88rem; margin-bottom: 0.75rem;">روی دکمه زیر کلیک کنید تا پنجره نصب باز شود:</p>
@@ -342,7 +327,6 @@
                     </ol>
                 </div>
 
-                <!-- iOS Safari -->
                 <div id="guide-ios" class="guide-platform-section">
                     <h4><i class="fa-brands fa-apple"></i> راهنمای آیفون و آیپد (سافاری):</h4>
                     <ol class="guide-steps">
@@ -352,7 +336,6 @@
                     </ol>
                 </div>
 
-                <!-- Desktop / Other -->
                 <div id="guide-desktop" class="guide-platform-section">
                     <h4><i class="fa-solid fa-desktop"></i> راهنمای کامپیوتر و لپ‌تاپ:</h4>
                     <ol class="guide-steps">
@@ -363,12 +346,9 @@
             </div>
         </div>
 
-        <!-- Notification Toast -->
         <div id="toast" class="toast"></div>
-
     </div>
 
-    <!-- App Logic -->
     <script src="app.js"></script>
 </body>
 </html>
