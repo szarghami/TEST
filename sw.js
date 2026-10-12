@@ -1,5 +1,5 @@
-const CACHE_NAME = 'autoyar-cache-v4';
-const APP_SCOPE = '/app/';
+const CACHE_NAME = 'autoyar-cache-v5';
+const APP_SCOPE = '/';
 
 const localUrlsToCache = [
   '/',

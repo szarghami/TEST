@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>دستیار هوشمند خودرو اتویار</title>
 
     <!-- PWA Meta Tags -->
@@ -31,21 +31,6 @@
 </head>
 <body>
     <div id="app">
-        <!-- PWA Install Banner (Top Bar) -->
-        <div id="pwa-install-banner" class="pwa-install-banner">
-            <div class="banner-content">
-                <img src="icon-192x192.png" alt="اتویار" class="banner-icon">
-                <div class="banner-text">
-                    <strong>نصب اپلیکیشن اتویار</strong>
-                    <span>دسترسی سریع و اجرای آفلاین بدون فیلترشکن</span>
-                </div>
-            </div>
-            <div class="banner-actions">
-                <button id="banner-install-btn" class="btn primary small"><i class="fa-solid fa-download"></i> نصب برنامه</button>
-                <button id="banner-close-btn" class="banner-close-btn" aria-label="بستن">&times;</button>
-            </div>
-        </div>
-
         <!-- Auth View -->
         <section id="auth-view" class="view active">
             <div class="auth-container">
@@ -114,7 +99,6 @@
                 </div>
 
                 <div class="parts-grid">
-                    <!-- Parts will be dynamically injected here -->
                     <div class="part-card warning">
                         <div class="part-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
                         <div class="part-details">
@@ -139,13 +123,8 @@
                     <button class="tab" data-target="symptoms-list">علائم و خرابی‌ها</button>
                 </div>
 
-                <div id="repairs-list" class="tab-content active">
-                    <!-- Repair history items -->
-                </div>
-
-                <div id="symptoms-list" class="tab-content">
-                    <!-- Symptoms history items -->
-                </div>
+                <div id="repairs-list" class="tab-content active"></div>
+                <div id="symptoms-list" class="tab-content"></div>
             </section>
 
             <!-- DIY View -->
@@ -169,9 +148,7 @@
 
                 <div class="tutorials">
                     <h3>ویدیوهای آموزشی اختصاصی</h3>
-                    <div class="video-grid" id="video-tutorials">
-                        <!-- Videos from API/DB -->
-                    </div>
+                    <div class="video-grid" id="video-tutorials"></div>
                 </div>
             </section>
 
@@ -187,9 +164,7 @@
                         <span id="obd-connection-status">متصل نیست</span>
                     </div>
                     <button id="connect-obd-btn" class="btn primary">اتصال به دستگاه دیاگ (OBD2)</button>
-                    <div id="obd-data" class="hidden">
-                        <!-- OBD Data -->
-                    </div>
+                    <div id="obd-data" class="hidden"></div>
                 </div>
 
                 <div class="ai-chat-section">
@@ -221,12 +196,6 @@
                             <option value="monthly">ماهانه</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="settings-group" id="install-group">
-                    <h3>نصب اپلیکیشن</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">برای دسترسی سریع‌تر، آفلاین و بدون نیاز به مرورگر، اپلیکیشن را روی گوشی یا کامپیوتر خود نصب کنید.</p>
-                    <button id="install-btn" class="btn primary full-width"><i class="fa-solid fa-download"></i> نصب اتویار</button>
                 </div>
 
                 <div class="settings-group">
@@ -267,7 +236,6 @@
         </div>
 
         <!-- Modals -->
-        <!-- Payment Modal -->
         <div id="payment-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -280,7 +248,6 @@
             </div>
         </div>
 
-        <!-- Add Record Modal -->
         <div id="add-record-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
@@ -318,7 +285,6 @@
             </div>
         </div>
 
-        <!-- Install Guide Modal -->
         <div id="install-guide-modal" class="modal">
             <div class="modal-content install-guide-content">
                 <span class="close-modal">&times;</span>
@@ -330,7 +296,6 @@
                     </div>
                 </div>
 
-                <!-- Android and Chrome with trigger button -->
                 <div id="guide-android" class="guide-platform-section">
                     <h4><i class="fa-brands fa-android"></i> راهنمای اندروید و گوگل کروم:</h4>
                     <p style="font-size: 0.88rem; margin-bottom: 0.75rem;">روی دکمه زیر کلیک کنید تا پنجره نصب باز شود:</p>
@@ -341,7 +306,6 @@
                     </ol>
                 </div>
 
-                <!-- iOS Safari -->
                 <div id="guide-ios" class="guide-platform-section">
                     <h4><i class="fa-brands fa-apple"></i> راهنمای آیفون و آیپد (سافاری):</h4>
                     <ol class="guide-steps">
@@ -351,7 +315,6 @@
                     </ol>
                 </div>
 
-                <!-- Desktop / Other -->
                 <div id="guide-desktop" class="guide-platform-section">
                     <h4><i class="fa-solid fa-desktop"></i> راهنمای کامپیوتر و لپ‌تاپ:</h4>
                     <ol class="guide-steps">
@@ -362,12 +325,9 @@
             </div>
         </div>
 
-        <!-- Notification Toast -->
         <div id="toast" class="toast"></div>
-
     </div>
 
-    <!-- App Logic -->
     <script src="app.js"></script>
 </body>
 </html>
