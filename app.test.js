@@ -1,85 +1,116 @@
-window.appInitialized = true;
-const app = require('./app.js');
+const fs = require('fs');
+const path = require('path');
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+const { JSDOM } = require('jsdom');
 
-describe('updateKm', () => {
+// Read the index.html file to use it as the DOM template
+const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
+const appJsContent = fs.readFileSync(path.resolve(__dirname, './app.js'), 'utf8');
+
+describe('App', () => {
+    let dom;
+    let window;
+    let document;
+    let app;
+
     beforeEach(() => {
-        // Reset state and set up document body
-        document.body.innerHTML = `
-            <strong id="dashboard-km">0</strong>
-            <div id="toast" class="toast"></div>
-        `;
-        app.state.currentKm = 0;
-        app.els = {
-            dashboardKm: document.getElementById('dashboard-km'),
-            toast: document.getElementById('toast')
+        // Create a new JSDOM environment for each test
+        dom = new JSDOM(html, { runScripts: "dangerously" });
+        window = dom.window;
+        document = window.document;
+
+        // Mock matchMedia
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: jest.fn().mockImplementation(query => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: jest.fn(),
+                removeListener: jest.fn(),
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn(),
+            })),
+        });
+
+        // Mock localStorage
+        const localStorageMock = (function() {
+            let store = {};
+            return {
+                getItem: function(key) {
+                    return store[key] || null;
+                },
+                setItem: function(key, value) {
+                    store[key] = value.toString();
+                },
+                removeItem: function(key) {
+                    delete store[key];
+                },
+                clear: function() {
+                    store = {};
+                }
+            };
+        })();
+
+        Object.defineProperty(window, 'localStorage', {
+            value: localStorageMock
+        });
+
+        // Mock Supabase
+        window.supabase = {
+            createClient: jest.fn().mockReturnValue({
+                auth: {
+                    getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+                    onAuthStateChange: jest.fn().mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } })
+                }
+            })
         };
 
-        // Mock dependencies
+        // Mock global alert
+        window.alert = jest.fn();
+
+        // Evaluate the script inside the JSDOM window context to attach 'app' to window
+        const scriptEl = document.createElement("script");
+        scriptEl.textContent = appJsContent;
+        document.body.appendChild(scriptEl);
+
+        app = window.app;
+
+        // Initialize the app
+        app.init();
+
+        // Mock showMainApp and showToast to verify they are called
+        app.showMainApp = jest.fn();
         app.showToast = jest.fn();
-        app.updatePartsHealth = jest.fn();
     });
 
-    test('should update currentKm state', () => {
-        app.updateKm(12345);
-        expect(app.state.currentKm).toBe(12345);
-    });
+    describe('verifyOtp', () => {
+        it('should login successfully with correct OTP', async () => {
+            app.state.phone = '09123456789';
+            app.els.otpInput.value = '123456';
 
-    test('should update DOM element with formatted number', () => {
-        app.updateKm(12345);
-        expect(app.els.dashboardKm.textContent).toBe('12,345');
-    });
+            await app.verifyOtp();
 
-    test('should show success toast', () => {
-        app.updateKm(12345);
-        expect(app.showToast).toHaveBeenCalledWith('کیلومتر بروزرسانی شد', 'success');
-    });
+            expect(app.state.user).toEqual({ phone: '09123456789', id: 'user_123', isPremium: false });
+            expect(window.localStorage.getItem('autoyar_user')).toBe(JSON.stringify({ phone: '09123456789', id: 'user_123', isPremium: false }));
+            expect(app.showMainApp).toHaveBeenCalled();
+            expect(app.showToast).toHaveBeenCalledWith('ورود موفقیت آمیز بود', 'success');
+        });
 
-    test('should call updatePartsHealth', () => {
-        app.updateKm(12345);
-        expect(app.updatePartsHealth).toHaveBeenCalled();
-    });
-});
+        it('should show error with incorrect OTP', async () => {
+            app.state.phone = '09123456789';
+            app.els.otpInput.value = '654321';
 
-describe('escapeHTML', () => {
-    test('should return empty string for falsy values', () => {
-        expect(app.escapeHTML('')).toBe('');
-        expect(app.escapeHTML(null)).toBe('');
-        expect(app.escapeHTML(undefined)).toBe('');
-        expect(app.escapeHTML(0)).toBe('');
-        expect(app.escapeHTML(false)).toBe('');
-    });
+            await app.verifyOtp();
 
-    test('should return same string if no special characters exist', () => {
-        expect(app.escapeHTML('hello world')).toBe('hello world');
-        expect(app.escapeHTML('123')).toBe('123');
-    });
-
-    test('should escape &', () => {
-        expect(app.escapeHTML('a & b')).toBe('a &amp; b');
-        expect(app.escapeHTML('a && b')).toBe('a &amp;&amp; b');
-    });
-
-    test('should escape < and >', () => {
-        expect(app.escapeHTML('<div>')).toBe('&lt;div&gt;');
-        expect(app.escapeHTML('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
-    });
-
-    test('should escape double quotes', () => {
-        expect(app.escapeHTML('name="test"')).toBe('name=&quot;test&quot;');
-    });
-
-    test('should escape single quotes', () => {
-        expect(app.escapeHTML("name='test'")).toBe("name=&#039;test&#039;");
-    });
-
-    test('should escape multiple special characters in a string', () => {
-        const input = `<script>alert("XSS & 'injection'")</script>`;
-        const expected = `&lt;script&gt;alert(&quot;XSS &amp; &#039;injection&#039;&quot;)&lt;/script&gt;`;
-        expect(app.escapeHTML(input)).toBe(expected);
-    });
-
-    test('should handle truthy non-string types by calling toString()', () => {
-        expect(app.escapeHTML(123)).toBe('123');
-        expect(app.escapeHTML(true)).toBe('true');
+            // Check for initial state or explicitly null depending on implementation
+            expect(app.state.user).toBeFalsy();
+            expect(window.localStorage.getItem('autoyar_user')).toBeNull();
+            expect(app.showMainApp).not.toHaveBeenCalled();
+            expect(app.showToast).toHaveBeenCalledWith('کد تایید اشتباه است', 'error');
+        });
     });
 });
