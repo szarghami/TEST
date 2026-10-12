@@ -6,7 +6,7 @@ describe('syncRecordToCloud', () => {
     let window, document;
 
     beforeEach(() => {
-        const html = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
+        const html = fs.readFileSync(path.resolve(__dirname, './public/index.html'), 'utf8');
         const dom = new JSDOM(html, {
             url: 'http://localhost/',
             runScripts: 'dangerously',
@@ -32,7 +32,7 @@ describe('syncRecordToCloud', () => {
         global.document = document;
 
         // Load app.js script
-        const scriptContent = fs.readFileSync(path.resolve(__dirname, './app.js'), 'utf8');
+        const scriptContent = fs.readFileSync(path.resolve(__dirname, './public/app.js'), 'utf8');
         const scriptElement = document.createElement('script');
         scriptElement.textContent = scriptContent;
         document.body.appendChild(scriptElement);

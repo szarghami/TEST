@@ -1,0 +1,3 @@
+name = "fixcar-pwa"
+compatibility_date = "2023-10-25"
+pages_build_output_dir = "public"

@@ -1,13 +1,16 @@
 {
   "name": "autoyar",
   "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "description": "AutoYar Smart Car Assistant PWA",
+  "main": "public/app.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "python3 -m http.server 8000 --directory public"
+  },
+  "dependencies": {
+    "jest-environment-jsdom": "^29.7.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest": "^29.7.0"
   }
 }
