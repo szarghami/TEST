@@ -34,6 +34,8 @@ const app = {
         phone: '',
         currentKm: 0,
         records: [],
+        vehicles: [],
+        currentVehicleId: null,
         obdDevice: null,
         deferredPrompt: null,
         isStandalone: false
@@ -69,6 +71,15 @@ const app = {
             displayPhone: document.getElementById('display-phone'),
             userPhoneDisplay: document.getElementById('user-phone-display'),
             logoutBtn: document.getElementById('logout-btn'),
+
+
+            // Vehicles
+            vehicleSelector: document.getElementById('vehicle-selector'),
+            addVehicleBtn: document.getElementById('add-vehicle-btn'),
+            addVehicleModal: document.getElementById('add-vehicle-modal'),
+            vehicleForm: document.getElementById('vehicle-form'),
+            vehicleName: document.getElementById('vehicle-name'),
+            vehiclePlate: document.getElementById('vehicle-plate'),
 
             // Dashboard
             dashboardKm: document.getElementById('dashboard-km'),
@@ -133,21 +144,21 @@ const app = {
         if (this.els.logoutBtn) this.els.logoutBtn.addEventListener('click', () => this.logout());
 
         // Modals
-        this.els.newRecordBtn.addEventListener('click', () => this.openModal(this.els.addRecordModal));
-        this.els.premiumBtn.addEventListener('click', () => this.openModal(this.els.paymentModal));
+        if (this.els.newRecordBtn) this.els.newRecordBtn.addEventListener('click', () => this.openModal(this.els.addRecordModal));
+        if (this.els.premiumBtn) this.els.premiumBtn.addEventListener('click', () => this.openModal(this.els.paymentModal));
         this.els.closeModals.forEach(btn => {
             btn.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal')));
         });
 
         // Form Logic
-        this.els.recordType.addEventListener('change', (e) => {
+        if (this.els.recordType) this.els.recordType.addEventListener('change', (e) => {
             const isService = e.target.value === 'service';
             this.els.serviceFields.forEach(field => {
                 field.style.display = isService ? 'block' : 'none';
                 field.querySelector('input').required = isService;
             });
         });
-        this.els.recordForm.addEventListener('submit', (e) => this.saveRecord(e));
+        if (this.els.recordForm) this.els.recordForm.addEventListener('submit', (e) => this.saveRecord(e));
 
         // Tabs
         this.els.tabs.forEach(tab => {
@@ -161,9 +172,9 @@ const app = {
         });
 
         // OBD & AI
-        this.els.connectObdBtn.addEventListener('click', () => this.connectOBD());
-        this.els.aiSendBtn.addEventListener('click', () => this.sendAiMessage());
-        this.els.aiInput.addEventListener('keypress', (e) => {
+        if (this.els.connectObdBtn) this.els.connectObdBtn.addEventListener('click', () => this.connectOBD());
+        if (this.els.aiSendBtn) this.els.aiSendBtn.addEventListener('click', () => this.sendAiMessage());
+        if (this.els.aiInput) this.els.aiInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendAiMessage();
         });
 
@@ -195,7 +206,7 @@ const app = {
             this.showToast('ارتباط با اینترنت قطع شد. برنامه در حالت آفلاین کار می‌کند.', 'warning');
         });
 
-        this.els.updateKmBtn.addEventListener('click', () => {
+        if (this.els.updateKmBtn) this.els.updateKmBtn.addEventListener('click', () => {
             const newKm = prompt('کیلومتر فعلی خودرو را وارد کنید:', this.state.currentKm);
             if (newKm && !isNaN(newKm)) {
                 this.updateKm(parseInt(newKm));
@@ -401,6 +412,7 @@ const app = {
                     .from('records')
                     .select('km')
                     .eq('user_phone', this.state.user.phone)
+                    .eq('vehicle_id', this.state.currentVehicleId)
                     .not('km', 'is', null)
                     .order('created_at', { ascending: false })
                     .limit(1);
@@ -488,6 +500,7 @@ const app = {
         try {
             const dbRecord = {
                 user_phone: this.state.user.phone,
+                vehicle_id: this.state.currentVehicleId,
                 type: record.type,
                 title: record.title,
                 km: record.km ? parseInt(record.km) : null,
@@ -518,6 +531,80 @@ const app = {
         }
     },
 
+
+    async loadVehicles() {
+        if (!navigator.onLine || !this.supabase || !this.state.user) return;
+        try {
+            const { data, error } = await this.supabase
+                .from('vehicles')
+                .select('*')
+                .eq('user_id', this.state.user.id)
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            this.state.vehicles = data || [];
+            this.renderVehicleSelector();
+
+            if (this.state.vehicles.length > 0) {
+                if (!this.state.currentVehicleId || !this.state.vehicles.find(v => v.id === this.state.currentVehicleId)) {
+                    this.state.currentVehicleId = this.state.vehicles[0].id;
+                }
+            } else {
+                this.state.currentVehicleId = null;
+            }
+            if (this.els.vehicleSelector) {
+                this.els.vehicleSelector.value = this.state.currentVehicleId || '';
+            }
+            this.loadHistory();
+        } catch (err) {
+            console.error("Failed to load vehicles:", err);
+        }
+    },
+
+    renderVehicleSelector() {
+        if (!this.els.vehicleSelector) return;
+        this.els.vehicleSelector.innerHTML = '';
+        if (this.state.vehicles.length === 0) {
+            this.els.vehicleSelector.innerHTML = '<option value="">خودرویی ثبت نشده</option>';
+            return;
+        }
+        this.state.vehicles.forEach(v => {
+            const option = document.createElement('option');
+            option.value = v.id;
+            option.textContent = v.car_name + (v.plate_number ? ` (${v.plate_number})` : '');
+            this.els.vehicleSelector.appendChild(option);
+        });
+        this.els.vehicleSelector.value = this.state.currentVehicleId || '';
+    },
+
+    async handleAddVehicle(e) {
+        e.preventDefault();
+        if (!this.state.user) return;
+        const name = this.els.vehicleName.value.trim();
+        const plate = this.els.vehiclePlate.value.trim();
+
+        if (!name) return;
+
+        try {
+            const dbVehicle = {
+                user_id: this.state.user.id,
+                car_name: name,
+                plate_number: plate || null
+            };
+            const { data, error } = await this.supabase.from('vehicles').insert([dbVehicle]).select();
+            if (error) throw error;
+
+            this.showToast('خودرو با موفقیت اضافه شد', 'success');
+            this.els.addVehicleModal.style.display = 'none';
+            this.els.vehicleForm.reset();
+
+            await this.loadVehicles(); // Reload vehicles
+        } catch (err) {
+            console.error("Failed to add vehicle:", err);
+            this.showToast('خطا در افزودن خودرو', 'danger');
+        }
+    },
+
     async loadHistory() {
         const localRecords = localStorage.getItem('autoyar_records');
         if (localRecords) {
@@ -533,6 +620,7 @@ const app = {
                     .from('records')
                     .select('*')
                     .eq('user_phone', this.state.user.phone)
+                    .eq('vehicle_id', this.state.currentVehicleId)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
