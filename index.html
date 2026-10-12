@@ -65,15 +65,19 @@
         <!-- Main App Layout (Hidden until logged in) -->
         <div id="main-layout" style="display: none;">
 
-            <!-- Header -->
+                    <!-- Header -->
             <header class="app-header">
                 <div class="user-info">
                     <div class="avatar"><i class="fa-solid fa-user"></i></div>
-                    <span id="user-phone-display">کاربر</span>
+                    <span id="user-phone-display" class="user-phone"></span>
                 </div>
-                <div class="header-actions">
-                    <button id="header-install-btn" class="btn outline primary small"><i class="fa-solid fa-download"></i> نصب اپ</button>
-                    <button id="premium-btn" class="btn outline gold"><i class="fa-solid fa-crown"></i> ارتقا پرمیوم</button>
+                <div class="vehicle-selector-container">
+                    <select id="vehicle-selector" class="vehicle-selector">
+                        <option value="">در حال بارگذاری...</option>
+                    </select>
+                    <button id="add-vehicle-btn" class="btn icon-only secondary" title="افزودن خودرو">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                 </div>
             </header>
 
@@ -236,6 +240,25 @@
         </div>
 
         <!-- Modals -->
+
+        <div id="add-vehicle-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>افزودن خودروی جدید</h2>
+                <form id="vehicle-form">
+                    <div class="form-group">
+                        <label>نام یا مدل خودرو (مثال: پراید خودم، 206 شرکت)</label>
+                        <input type="text" id="vehicle-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>شماره پلاک (اختیاری)</label>
+                        <input type="text" id="vehicle-plate" dir="ltr" placeholder="مثلا 12ب345-67">
+                    </div>
+                    <button type="submit" class="btn primary full-width">ذخیره خودرو</button>
+                </form>
+            </div>
+        </div>
+
         <div id="payment-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>

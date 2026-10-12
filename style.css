@@ -1017,3 +1017,20 @@ const app = {
 window.app = app;
 const startApp = () => { if (!window.appInitialized) { app.init(); window.appInitialized = true; } };
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', startApp); } else { startApp(); }
+
+/* Vehicle Selector */
+.vehicle-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.vehicle-selector {
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    min-width: 120px;
+    max-width: 180px;
+}
