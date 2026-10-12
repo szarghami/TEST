@@ -573,6 +573,9 @@ const app = {
         repairsList.innerHTML = '';
         symptomsList.innerHTML = '';
 
+        const repairsFragment = document.createDocumentFragment();
+        const symptomsFragment = document.createDocumentFragment();
+
         this.state.records.forEach(r => {
             const div = document.createElement('div');
             div.className = 'history-item';
@@ -597,11 +600,14 @@ const app = {
             div.innerHTML = headerHtml + metaHtml + descHtml;
 
             if (r.type === 'service') {
-                repairsList.appendChild(div);
+                repairsFragment.appendChild(div);
             } else {
-                symptomsList.appendChild(div);
+                symptomsFragment.appendChild(div);
             }
         });
+
+        repairsList.appendChild(repairsFragment);
+        symptomsList.appendChild(symptomsFragment);
     },
 
     // --- Web Bluetooth API (OBD2) ---
