@@ -98,12 +98,8 @@ const app = {
             aiMessages: document.getElementById('ai-messages'),
 
             toast: document.getElementById('toast'),
-            pwaInstallBanner: document.getElementById('pwa-install-banner'),
-            bannerInstallBtn: document.getElementById('banner-install-btn'),
-            bannerCloseBtn: document.getElementById('banner-close-btn'),
             authInstallBtn: document.getElementById('auth-install-btn'),
             headerInstallBtn: document.getElementById('header-install-btn'),
-            installBtn: document.getElementById('install-btn'),
             installGroup: document.getElementById('install-group'),
             installGuideModal: document.getElementById('install-guide-modal'),
             guideTriggerInstallBtn: document.getElementById('guide-trigger-install-btn'),
@@ -190,11 +186,6 @@ const app = {
             }
         });
 
-        if (this.els.bannerCloseBtn) {
-            this.els.bannerCloseBtn.addEventListener('click', () => {
-                this.dismissBanner();
-            });
-        }
 
         // Connectivity changes
         window.addEventListener('online', () => {
@@ -332,13 +323,12 @@ const app = {
     switchView(viewId) {
         this.els.views.forEach(view => {
             view.classList.remove('active');
-            view.style.display = 'none'; // Ensure hidden
+            view.style.display = ''; // Let CSS handle it
         });
         const targetView = document.getElementById(viewId);
         if(targetView) {
-            targetView.style.display = 'block';
-            // small delay for animation
-            setTimeout(() => targetView.classList.add('active'), 10);
+            targetView.classList.add('active');
+            targetView.style.display = ''; // Let CSS handle it
         }
 
         if(viewId === 'dashboard-view' && !this.chartInit) {
@@ -740,16 +730,13 @@ const app = {
         // Check if banner was dismissed recently (within 24 hours)
         const dismissedTime = localStorage.getItem('autoyar_install_banner_dismissed');
         if (dismissedTime && (Date.now() - parseInt(dismissedTime, 10)) < 24 * 3600 * 1000) {
-            if (this.els.pwaInstallBanner) this.els.pwaInstallBanner.style.display = 'none';
+            return;
         }
     },
 
     onInstallPromptAvailable(e) {
         this.state.deferredPrompt = e;
         if (!this.state.isStandalone) {
-            if (this.els.pwaInstallBanner && !localStorage.getItem('autoyar_install_banner_dismissed')) {
-                this.els.pwaInstallBanner.style.display = 'flex';
-            }
             if (this.els.installGroup) this.els.installGroup.style.display = 'block';
             if (this.els.headerInstallBtn) this.els.headerInstallBtn.style.display = 'inline-flex';
             if (this.els.authInstallBtn) this.els.authInstallBtn.style.display = 'inline-flex';
@@ -809,13 +796,13 @@ const app = {
 
     dismissBanner() {
         if (this.els.pwaInstallBanner) {
-            this.els.pwaInstallBanner.style.display = 'none';
+
         }
         localStorage.setItem('autoyar_install_banner_dismissed', Date.now().toString());
     },
 
     dismissInstallBanners() {
-        if (this.els.pwaInstallBanner) this.els.pwaInstallBanner.style.display = 'none';
+        if (this.els.pwaInstallBanner)
         if (this.els.headerInstallBtn) this.els.headerInstallBtn.style.display = 'none';
         if (this.els.authInstallBtn) this.els.authInstallBtn.style.display = 'none';
     },
