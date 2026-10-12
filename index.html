@@ -20,14 +20,14 @@
 
     <!-- External Libraries -->
     <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
 
     <link rel="stylesheet" href="style.css">
 
     <!-- Icons (FontAwesome) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
 </head>
 <body>
     <div id="app">
@@ -42,7 +42,7 @@
 
                 <div id="login-step-1" class="auth-step active">
                     <h2>ورود / ثبت نام</h2>
-                    <p>شماره موبایل خود را وارد کنید</p>
+                    <label for="phone-input">شماره موبایل خود را وارد کنید</label>
                     <input type="tel" id="phone-input" placeholder="09123456789" dir="ltr">
                     <button id="send-otp-btn" class="btn primary">ارسال کد تایید</button>
                 </div>
