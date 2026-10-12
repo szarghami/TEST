@@ -141,24 +141,37 @@ const app = {
             this.els.loginStep2.classList.remove('active');
             this.els.loginStep1.classList.add('active');
         });
+
+        // Auth Enter keys
+        if (this.els.phoneInput) {
+            this.els.phoneInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.sendOtp();
+            });
+        }
+        if (this.els.otpInput) {
+            this.els.otpInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.verifyOtp();
+            });
+        }
+
         if (this.els.logoutBtn) this.els.logoutBtn.addEventListener('click', () => this.logout());
 
         // Modals
-        if (this.els.newRecordBtn) this.els.newRecordBtn.addEventListener('click', () => this.openModal(this.els.addRecordModal));
-        if (this.els.premiumBtn) this.els.premiumBtn.addEventListener('click', () => this.openModal(this.els.paymentModal));
+        if (this.els.newRecordBtn) if (this.els.newRecordBtn) if (this.els.newRecordBtn) if(this.els.newRecordBtn) if(this.els.newRecordBtn) this.els.newRecordBtn.addEventListener('click', () => this.openModal(this.els.addRecordModal));
+        if (this.els.premiumBtn) if (this.els.premiumBtn) if (this.els.premiumBtn) if(this.els.premiumBtn) if(this.els.premiumBtn) this.els.premiumBtn.addEventListener('click', () => this.openModal(this.els.paymentModal));
         this.els.closeModals.forEach(btn => {
             btn.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal')));
         });
 
         // Form Logic
-        if (this.els.recordType) this.els.recordType.addEventListener('change', (e) => {
+        if (this.els.recordType) if (this.els.recordType) if (this.els.recordType) if(this.els.recordType) if(this.els.recordType) this.els.recordType.addEventListener('change', (e) => {
             const isService = e.target.value === 'service';
             this.els.serviceFields.forEach(field => {
                 field.style.display = isService ? 'block' : 'none';
                 field.querySelector('input').required = isService;
             });
         });
-        if (this.els.recordForm) this.els.recordForm.addEventListener('submit', (e) => this.saveRecord(e));
+        if (this.els.recordForm) if (this.els.recordForm) if (this.els.recordForm) if(this.els.recordForm) if(this.els.recordForm) this.els.recordForm.addEventListener('submit', (e) => this.saveRecord(e));
 
         // Tabs
         this.els.tabs.forEach(tab => {
@@ -172,9 +185,9 @@ const app = {
         });
 
         // OBD & AI
-        if (this.els.connectObdBtn) this.els.connectObdBtn.addEventListener('click', () => this.connectOBD());
-        if (this.els.aiSendBtn) this.els.aiSendBtn.addEventListener('click', () => this.sendAiMessage());
-        if (this.els.aiInput) this.els.aiInput.addEventListener('keypress', (e) => {
+        if (this.els.connectObdBtn) if (this.els.connectObdBtn) if (this.els.connectObdBtn) if(this.els.connectObdBtn) if(this.els.connectObdBtn) this.els.connectObdBtn.addEventListener('click', () => this.connectOBD());
+        if (this.els.aiSendBtn) if (this.els.aiSendBtn) if (this.els.aiSendBtn) if(this.els.aiSendBtn) if(this.els.aiSendBtn) this.els.aiSendBtn.addEventListener('click', () => this.sendAiMessage());
+        if (this.els.aiInput) if (this.els.aiInput) if (this.els.aiInput) if(this.els.aiInput) if(this.els.aiInput) this.els.aiInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendAiMessage();
         });
 
@@ -206,12 +219,7 @@ const app = {
             this.showToast('ارتباط با اینترنت قطع شد. برنامه در حالت آفلاین کار می‌کند.', 'warning');
         });
 
-        if (this.els.updateKmBtn) this.els.updateKmBtn.addEventListener('click', () => {
-            const newKm = prompt('کیلومتر فعلی خودرو را وارد کنید:', this.state.currentKm);
-            if (newKm && !isNaN(newKm)) {
-                this.updateKm(parseInt(newKm));
-            }
-        });
+        if (this.els.updateKmBtn) this.els.updateKmBtn.addEventListener('click', () => this.updateKm());
     },
 
     // --- Core Methods ---
@@ -230,15 +238,19 @@ const app = {
         }
     },
 
-    checkAuth() {
-        const savedUser = localStorage.getItem('autoyar_user');
-        if (savedUser) {
-            this.state.user = JSON.parse(savedUser);
-            this.showMainApp();
-        } else {
-            this.els.authView.style.display = 'block';
-            this.els.mainLayout.style.display = 'none';
+    async checkAuth() {
+        if (this.supabase) {
+            const { data: { session } } = await this.supabase.auth.getSession();
+            if (session) {
+                this.state.user = session.user;
+                this.showMainApp();
+                return;
+            }
         }
+
+        // Fallback or empty
+        this.els.authView.style.display = 'block';
+        this.els.mainLayout.style.display = 'none';
     },
 
     async sendOtp() {
@@ -484,7 +496,7 @@ const app = {
         this.state.records.unshift(record); 
         localStorage.setItem('autoyar_records', JSON.stringify(this.state.records));
 
-        this.renderRecords();
+        this.renderRecords(); this.updateDashboardDynamic();
         this.closeModal(this.els.addRecordModal);
         this.els.recordForm.reset();
 
@@ -606,12 +618,11 @@ const app = {
     },
 
     async loadHistory() {
+        // Fallback local records just in case
         const localRecords = localStorage.getItem('autoyar_records');
         if (localRecords) {
             this.state.records = JSON.parse(localRecords);
-            this.renderRecords();
-        } else {
-            this.state.records = []; 
+            this.renderRecords(); this.updateDashboardDynamic();
         }
 
         if (navigator.onLine && this.supabase && this.state.user) {
@@ -637,10 +648,37 @@ const app = {
                         desc: r.description
                     }));
                     localStorage.setItem('autoyar_records', JSON.stringify(this.state.records));
-                    this.renderRecords();
+                    this.renderRecords(); this.updateDashboardDynamic();
                 }
             } catch (err) {
                 console.error("Failed to load from Supabase:", err);
+            }
+        }
+    },
+
+
+    updateDashboardDynamic() {
+        const currentKm = parseInt(this.els.dashboardKm.textContent.replace(/,/g, '') || 0);
+        const warningThreshold = 1000; // Warn if within 1000km
+
+        let needsCheck = [];
+        this.state.records.forEach(r => {
+            if (r.nextKm && r.type === 'service') {
+                const remaining = r.nextKm - currentKm;
+                if (remaining <= warningThreshold) {
+                    needsCheck.push(r);
+                }
+            }
+        });
+
+        const statusContainer = document.querySelector('.status-summary');
+        if (statusContainer) {
+            if (needsCheck.length > 0) {
+                statusContainer.innerHTML = `<h3>وضعیت کلی: <span class="status-warning" style="color:var(--warning)">نیازمند توجه</span></h3><p style="cursor:pointer" onclick="app.switchView('history-view')">${needsCheck.length} قطعه نیاز به بررسی دارند (کلیک کنید)</p>`;
+                // Notification Check
+                this.showToast(`${needsCheck.length} قطعه نزدیک به زمان تعویض هستند!`, 'warning');
+            } else {
+                statusContainer.innerHTML = `<h3>وضعیت کلی: <span class="status-good" style="color:var(--success)">خوب</span></h3><p>همه چیز مرتب است</p>`;
             }
         }
     },
@@ -717,12 +755,26 @@ const app = {
 
     // --- AI Chatbot ---
     async fetchAiResponse(text) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                const response = `بر اساس علامتی که گفتید ("${text}")، احتمالاً مشکل از لنت ترمز یا دیسک چرخ است. پیشنهاد می‌کنم در اسرع وقت ضخامت لنت‌ها بررسی شود.`;
-                resolve(response);
-            }, 1500);
-        });
+        if (!this.config.openAiKey || this.config.openAiKey === 'YOUR_OPENAI_API_KEY') {
+            return "کلید API هوش مصنوعی در کد تنظیم نشده است.";
+        }
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.config.openAiKey}`;
+            const prompt = `تو یک مکانیک ماهر خودرو هستی. کاربر علائم خرابی ماشین را می‌گوید و تو باید به زبان ساده فارسی علت‌های احتمالی را بگویی.
+
+کاربر: ` + text;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        } catch(e) {
+            console.error(e);
+            return "مشکلی در ارتباط با هوش مصنوعی پیش آمد.";
+        }
     },
 
     async sendAiMessage() {
